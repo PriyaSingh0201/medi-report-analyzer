@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report History | Dooper AI Report Analyzer</title>
+    <title>Report History | Dooper Report Analyzer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
     <script>
@@ -21,7 +21,7 @@
         <div class="nav-container">
             <a href="{{ url_for('main.dashboard_page') }}" class="logo">
                 <img src="{{ url_for('static', filename='images/dooper-logo.jpeg') }}" style="width:2rem;height:2rem;object-fit:contain;border-radius:6px;" alt="Dooper">
-                <span>Dooper AI</span>
+                <span>Dooper</span>
             </a>
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.dashboard_page') }}">Dashboard</a></li>
@@ -112,6 +112,10 @@
                 <!-- Summary card -->
                 <div class="summary-box" id="view-summary">
                     Clinical summary content goes here...
+                </div>
+                <div class="summary-box" id="view-deficiency-summary" style="background: rgba(224, 41, 90, 0.05); border: 1px solid rgba(224, 41, 90, 0.12);">
+                    <strong>Deficiency Summary</strong>
+                    <p id="view-deficiency-text" style="margin: 0.75rem 0 0 0; color: var(--text-main);">Deficiency details will appear here.</p>
                 </div>
 
                 <!-- Warning Alerts -->

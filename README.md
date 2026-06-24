@@ -1,4 +1,4 @@
-# Dooper AI Medical Report Analyzer
+# Dooper Medical Report Analyzer
 
 A production-ready, beautiful, and secure **AI Medical Report Analyzer** web application. Built using a light, high-performance stack suitable for a second-year CSE student project, easy to explain during interview presentations. 
 

@@ -40,6 +40,7 @@ def init_db():
             file_path TEXT NOT NULL,
             extracted_text TEXT,
             summary TEXT,
+            deficiency_summary TEXT,
             key_findings TEXT, -- JSON string
             severity TEXT,
             alerts TEXT, -- JSON string
@@ -48,12 +49,15 @@ def init_db():
         )
     ''')
     
-    # Database migration: check if suggestions column exists, if not, add it
+    # Database migration: add new columns if they do not exist
     cursor.execute("PRAGMA table_info(reports)")
     columns = [col[1] for col in cursor.fetchall()]
     if 'suggestions' not in columns:
         cursor.execute("ALTER TABLE reports ADD COLUMN suggestions TEXT DEFAULT '[]'")
         print("Migrated database: added suggestions column to reports table")
+    if 'deficiency_summary' not in columns:
+        cursor.execute("ALTER TABLE reports ADD COLUMN deficiency_summary TEXT DEFAULT ''")
+        print("Migrated database: added deficiency_summary column to reports table")
         
     conn.commit()
     conn.close()

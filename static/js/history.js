@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Summary Text
         document.getElementById('view-summary').textContent = report.summary;
+        document.getElementById('view-deficiency-text').textContent = report.deficiency_summary || 'No deficiency summary available.';
 
         // Alerts Banners List
         const alertsContainer = document.getElementById('view-alerts-list');

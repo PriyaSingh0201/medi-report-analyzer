@@ -51,12 +51,13 @@ def update_user_password(user_id, new_password_hash):
 
 # --- Report Model Functions ---
 
-def create_report(user_id, report_name, file_path, extracted_text, summary, key_findings, severity, alerts, suggestions=None):
+def create_report(user_id, report_name, file_path, extracted_text, summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
     """
     Creates a new report record.
     key_findings: dict/list representing findings, will be JSON stringified.
     alerts: list representing warning alerts, will be JSON stringified.
     suggestions: list representing recommendations, will be JSON stringified.
+    deficiency_summary: plain text summary of detected deficiencies.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -65,20 +66,21 @@ def create_report(user_id, report_name, file_path, extracted_text, summary, key_
     key_findings_str = json.dumps(key_findings)
     alerts_str = json.dumps(alerts)
     suggestions_str = json.dumps(suggestions if suggestions is not None else [])
+    deficiency_summary_value = deficiency_summary if deficiency_summary is not None else ''
     
     cursor.execute(
         """
-        INSERT INTO reports (user_id, report_name, file_path, extracted_text, summary, key_findings, severity, alerts, suggestions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO reports (user_id, report_name, file_path, extracted_text, summary, deficiency_summary, key_findings, severity, alerts, suggestions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (user_id, report_name, file_path, extracted_text, summary, key_findings_str, severity, alerts_str, suggestions_str)
+        (user_id, report_name, file_path, extracted_text, summary, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str)
     )
     conn.commit()
     report_id = cursor.lastrowid
     conn.close()
     return report_id
 
-def update_report(report_id, user_id, report_name, summary, key_findings, severity, alerts, suggestions=None):
+def update_report(report_id, user_id, report_name, summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
     """
     Updates an existing report record.
     """
@@ -88,14 +90,15 @@ def update_report(report_id, user_id, report_name, summary, key_findings, severi
     key_findings_str = json.dumps(key_findings)
     alerts_str = json.dumps(alerts)
     suggestions_str = json.dumps(suggestions if suggestions is not None else [])
+    deficiency_summary_value = deficiency_summary if deficiency_summary is not None else ''
     
     cursor.execute(
         """
         UPDATE reports
-        SET report_name = ?, summary = ?, key_findings = ?, severity = ?, alerts = ?, suggestions = ?
+        SET report_name = ?, summary = ?, deficiency_summary = ?, key_findings = ?, severity = ?, alerts = ?, suggestions = ?
         WHERE id = ? AND user_id = ?
         """,
-        (report_name, summary, key_findings_str, severity, alerts_str, suggestions_str, report_id, user_id)
+        (report_name, summary, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str, report_id, user_id)
     )
     conn.commit()
     rows_affected = cursor.rowcount
@@ -154,6 +157,7 @@ def get_reports_by_user(user_id, search_query=None, severity_filter=None, sort_b
         except (TypeError, ValueError):
             report['suggestions'] = []
             
+        report['deficiency_summary'] = report.get('deficiency_summary', '') or ''
         reports.append(report)
         
     return reports
@@ -182,6 +186,8 @@ def get_report_by_id(report_id, user_id):
             report['suggestions'] = json.loads(report.get('suggestions', '[]'))
         except (TypeError, ValueError):
             report['suggestions'] = []
+
+        report['deficiency_summary'] = report.get('deficiency_summary', '') or ''
         return report
     return None
 

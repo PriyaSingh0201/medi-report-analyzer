@@ -6,6 +6,13 @@ from email.mime.multipart import MIMEMultipart
 from pypdf import PdfReader
 from PIL import Image
 import pytesseract
+import importlib
+
+pdf2image = None
+try:
+    pdf2image = importlib.import_module('pdf2image')
+except ImportError:
+    pdf2image = None
 
 # Tesseract path for Windows
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -29,7 +36,8 @@ def extract_text_from_pdf(file_path):
 
     # Scanned PDF fallback — convert to images then OCR
     try:
-        import pdf2image
+        if pdf2image is None:
+            raise ImportError("pdf2image not installed")
         images = pdf2image.convert_from_path(file_path, dpi=300)
         full_text = ""
         for img in images:
@@ -131,6 +139,17 @@ SUGGESTIONS = {
     }
 }
 
+DEFICIENCY_PHRASES = {
+    "Hemoglobin": "suggests anemia or low iron levels",
+    "Vitamin D": "indicates Vitamin D deficiency",
+    "Vitamin B12": "indicates Vitamin B12 deficiency",
+    "HDL": "suggests low protective cholesterol (HDL)",
+    "RBC": "suggests anemia or low red blood cell count",
+    "WBC": "may indicate immune weakness or infection risk",
+    "Platelets": "suggests low platelet count and bleeding risk",
+    "BUN": "suggests possible protein deficiency or malnutrition"
+}
+
 
 # --- AI Rule-Based Analyzer ---
 
@@ -144,6 +163,7 @@ def analyze_medical_text(text):
     alerts = []
     summaries = []
     suggestions = []
+    deficiencies = []
 
     def get_suggestion(name, status):
         s = SUGGESTIONS.get(name, {})
@@ -157,11 +177,8 @@ def analyze_medical_text(text):
             "reference_range": ref_range,
             "suggestion": get_suggestion(name, status)
         }
-        if status != "Normal":
-            alerts.append(f"⚠ {status} {name}: {val} {unit} (Ref: {ref_range})")
-            sugg = get_suggestion(name, status)
-            if sugg:
-                suggestions.append(f"{name}: {sugg}")
+        if status in {"Low", "Critical"} and name in DEFICIENCY_PHRASES:
+            deficiencies.append(DEFICIENCY_PHRASES[name])
 
     def parse(pattern, text):
         m = re.search(pattern, text, re.IGNORECASE)
@@ -339,6 +356,7 @@ def analyze_medical_text(text):
         summaries.append("No standard biomarkers could be parsed from this report. Please review manually.")
         findings["General Report"] = {"value": "Manual Review", "unit": "N/A", "status": "Normal", "reference_range": "N/A", "suggestion": ""}
         severity = "Normal"
+        deficiency_summary = "No deficiency summary available; no standard biomarkers were parsed."
     else:
         statuses = [f["status"] for f in findings.values()]
         if "Critical" in statuses:
@@ -348,10 +366,16 @@ def analyze_medical_text(text):
         else:
             severity = "Normal"
 
+        if deficiencies:
+            deficiency_summary = "Deficiency Summary: " + "; ".join(deficiencies) + "."
+        else:
+            deficiency_summary = "No deficiency patterns detected in the parsed biomarkers."
+
     summary_text = " ".join(summaries)
 
     return {
         "summary": summary_text,
+        "deficiency_summary": deficiency_summary,
         "key_findings": findings,
         "severity": severity,
         "alerts": alerts,
@@ -425,6 +449,10 @@ def generate_pdf_report(report, patient_name, output_path):
 
         story.append(Paragraph("Clinical Summary", heading2_style))
         story.append(Paragraph(report['summary'], body_style))
+
+        if report.get('deficiency_summary'):
+            story.append(Paragraph("Deficiency Summary", heading2_style))
+            story.append(Paragraph(report['deficiency_summary'], body_style))
 
         if report['alerts']:
             story.append(Paragraph("Warnings & Critical Flags", heading2_style))
