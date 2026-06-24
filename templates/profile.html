@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings | Dooper AI Report Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <script>
+        // Inline script to prevent theme flash
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('dark-mode');
+            });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="{{ url_for('main.dashboard_page') }}" class="logo">
+                <img src="{{ url_for('static', filename='images/dooper-logo.jpeg') }}" style="width:2rem;height:2rem;object-fit:contain;border-radius:6px;" alt="Dooper">
+                <span>Dooper AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('main.dashboard_page') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('main.history_page') }}">History</a></li>
+                <li class="active"><a href="{{ url_for('main.profile_page') }}">Profile</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Mode">
+                        <svg id="theme-icon-sun" fill="currentColor" viewBox="0 0 20 20" style="display:none;"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.46 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
+                        <svg id="theme-icon-moon" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    </button>
+                </li>
+                <li><button id="logout-btn" class="btn logout-btn">Logout</button></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="profile-grid">
+            <!-- Left Side: User details card -->
+            <div class="profile-card">
+                <div class="profile-avatar" id="profile-avatar">U</div>
+                <div style="margin-top: -0.5rem;">
+                    <h2 id="profile-fullname">{{ user.fullname }}</h2>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);" id="profile-email">{{ user.email }}</p>
+                </div>
+                
+                <div class="profile-info-block">
+                    <div class="info-row">
+                        <span class="info-label">Member Since</span>
+                        <span class="info-value" id="profile-joined">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Reports</span>
+                        <span class="info-value" id="profile-total-reports">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Change password form -->
+            <div class="profile-main">
+                <div class="password-card">
+                    <h2 class="card-title" style="margin-bottom: 1.5rem;">Security Settings</h2>
+                    
+                    <div id="success-alert" class="success-banner">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                        </svg>
+                        <span id="success-text">Password updated successfully!</span>
+                    </div>
+                    
+                    <div id="error-alert" class="success-banner" style="background-color: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: var(--critical-color);">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg>
+                        <span id="error-text">Failed to update password</span>
+                    </div>
+
+                    <form id="change-password-form" class="password-form" novalidate>
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" class="input-control" placeholder="Enter current password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" class="input-control" placeholder="At least 8 characters" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-new-password">Confirm New Password</label>
+                            <input type="password" id="confirm-new-password" class="input-control" placeholder="Re-enter new password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; align-self: flex-start;">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Dooper Medical Systems. Fully functional student prototype.</p>
+    </footer>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+</body>
+</html>

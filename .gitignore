@@ -1,0 +1,28 @@
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*.sqlite
+*.db
+database/medical.db
+database/temp_pdfs/
+uploads/
+Dockerfile
+*.log
+*.pot
+*.pyg
+*.swp
+Thumbs.db
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Ignore VS Code settings
+.vscode/
+# Ignore user-specific files
+*.user
+*.suo
+
+# Keep folder structure
+!uploads/.gitkeep
+!database/temp_pdfs/.gitkeep

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report History | Dooper AI Report Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+    <script>
+        // Inline script to prevent theme flash
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('dark-mode');
+            });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="{{ url_for('main.dashboard_page') }}" class="logo">
+                <img src="{{ url_for('static', filename='images/dooper-logo.jpeg') }}" style="width:2rem;height:2rem;object-fit:contain;border-radius:6px;" alt="Dooper">
+                <span>Dooper AI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('main.dashboard_page') }}">Dashboard</a></li>
+                <li class="active"><a href="{{ url_for('main.history_page') }}">History</a></li>
+                <li><a href="{{ url_for('main.profile_page') }}">Profile</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Mode">
+                        <svg id="theme-icon-sun" fill="currentColor" viewBox="0 0 20 20" style="display:none;"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.46 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
+                        <svg id="theme-icon-moon" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    </button>
+                </li>
+                <li><button id="logout-btn" class="btn logout-btn">Logout</button></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Search and Filter Bar -->
+        <div class="filter-bar">
+            <div class="search-wrapper">
+                <svg class="search-icon" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <input type="text" id="search-input" class="input-control search-input" placeholder="Search reports by name or biomarkers...">
+            </div>
+            
+            <select id="filter-severity" class="filter-select">
+                <option value="">All Severities</option>
+                <option value="Normal">🟢 Normal</option>
+                <option value="Moderate">🟡 Moderate</option>
+                <option value="Critical">🔴 Critical</option>
+            </select>
+            
+            <select id="sort-by" class="filter-select">
+                <option value="date_desc">Newest First</option>
+                <option value="date_asc">Oldest First</option>
+                <option value="name_asc">Name A-Z</option>
+                <option value="name_desc">Name Z-A</option>
+            </select>
+        </div>
+
+        <!-- History List Grid -->
+        <div class="card">
+            <h2 class="card-title">Analysis History</h2>
+            <div class="history-list" id="history-container">
+                <!-- Loaded dynamically -->
+                <div class="empty-state">
+                    <div class="loader" style="margin: 0 auto;"></div>
+                    <p style="margin-top: 1rem;">Fetching historical reports...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analysis Panel (View Panel) -->
+        <div class="card analysis-viewer" id="analysis-panel">
+            <div class="analysis-header">
+                <div>
+                    <h2 id="view-report-name">Report Title</h2>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);" id="view-report-date">Uploaded: Date</span>
+                </div>
+                <div class="analysis-header-actions">
+                    <span class="badge" id="view-severity-badge">Normal</span>
+                    <button class="btn btn-secondary" id="edit-analysis-btn">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                            <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.03l-.179.178c-.087.086-.148.2-.17.324l-.828 3.315a.5.5 0 0 0 .593.593l3.315-.828a.5.5 0 0 0 .324-.17l.178-.179z"/>
+                        </svg>
+                        Edit Findings
+                    </button>
+                    <a href="#" class="btn btn-primary" id="view-download-pdf">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        Download PDF
+                    </a>
+                </div>
+            </div>
+            
+            <!-- View Mode Details -->
+            <div id="view-mode-container">
+                <!-- Voice playback -->
+                <div class="voice-bar">
+                    <span>Listen to Summary:</span>
+                    <button class="btn-voice" id="voice-play-btn">🔊 Play Summary</button>
+                    <button class="btn-voice" id="voice-stop-btn" style="background-color: var(--border-color); color: var(--text-muted); display: none;">⏹ Stop</button>
+                </div>
+
+                <!-- Summary card -->
+                <div class="summary-box" id="view-summary">
+                    Clinical summary content goes here...
+                </div>
+
+                <!-- Warning Alerts -->
+                <div class="alert-card-list" id="view-alerts-list">
+                    <!-- Alert items -->
+                </div>
+
+                <!-- Table of Biomarkers -->
+                <h3 style="margin-bottom: 0.75rem; font-weight: 700;">Biomarker Breakdown</h3>
+                <div class="table-responsive">
+                    <table class="biomarker-table">
+                        <thead>
+                            <tr>
+                                <th>Biomarker</th>
+                                <th>Extracted Value</th>
+                                <th>Reference Range</th>
+                                <th>Status Indicator</th>
+                                <th>Suggestion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="view-biomarker-rows">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Doctor Suggestions -->
+                <div id="view-suggestions-section" style="display:none; margin-top: 1.5rem;">
+                    <h3 style="margin-bottom: 0.75rem; font-weight: 700;">💡 Doctor Recommendations</h3>
+                    <ul class="suggestions-list" id="view-suggestions-list"></ul>
+                </div>
+            </div>
+
+            <!-- Edit Mode Form -->
+            <div id="edit-mode-container" style="display: none;">
+                <form id="edit-analysis-form" onsubmit="return false;">
+                    
+                    <!-- Report Title and Severity -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div>
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.4rem; font-size: 0.9rem;">Report Title / File Name</label>
+                            <input type="text" id="edit-report-name" class="input-control" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main);" required>
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.4rem; font-size: 0.9rem;">Overall Severity</label>
+                            <select id="edit-severity" class="filter-select" style="width: 100%; padding: 0.6rem; height: 38px;">
+                                <option value="Normal">🟢 Normal</option>
+                                <option value="Moderate">🟡 Moderate</option>
+                                <option value="Critical">🔴 Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Clinical Summary -->
+                    <div style="margin-bottom: 1.25rem;">
+                        <label style="font-weight: 600; display: block; margin-bottom: 0.4rem; font-size: 0.9rem;">Clinical Summary</label>
+                        <textarea id="edit-summary" class="input-control" style="width: 100%; height: 80px; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main); font-family: inherit; resize: vertical;" required></textarea>
+                    </div>
+                    
+                    <!-- Biomarkers Table -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h3 style="font-weight: 700; font-size: 1.1rem;">Biomarker Breakdown</h3>
+                        <button type="button" class="btn btn-secondary" id="add-biomarker-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            ➕ Add Biomarker
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive" style="margin-bottom: 1.25rem;">
+                        <table class="biomarker-table">
+                            <thead>
+                                <tr>
+                                    <th>Biomarker Name</th>
+                                    <th>Value</th>
+                                    <th>Unit</th>
+                                    <th>Reference Range</th>
+                                    <th>Status</th>
+                                    <th>Doctor Suggestion</th>
+                                    <th style="width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-biomarker-rows">
+                                <!-- Dynamic editable rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Alerts Banners Section -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h3 style="font-weight: 700; font-size: 1.1rem;">⚠ Warning Alerts</h3>
+                        <button type="button" class="btn btn-secondary" id="add-alert-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            ➕ Add Alert
+                        </button>
+                    </div>
+                    <div id="edit-alerts-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
+                        <!-- Dynamic alerts inputs -->
+                    </div>
+                    
+                    <!-- Doctor Recommendations Section -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h3 style="font-weight: 700; font-size: 1.1rem;">💡 Doctor Recommendations</h3>
+                        <button type="button" class="btn btn-secondary" id="add-suggestion-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            ➕ Add Recommendation
+                        </button>
+                    </div>
+                    <div id="edit-suggestions-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <!-- Dynamic suggestions inputs -->
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-edit-btn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+            
+            <p style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                <strong>Disclaimer:</strong> This is an AI-generated analysis based on extracted parameters from your uploaded health report. It is intended for educational and informational purposes only. This analysis does NOT constitute medical advice. Please consult with a qualified healthcare professional or doctor for clinical diagnosis and treatment options.
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Dooper Medical Systems. Fully functional student prototype.</p>
+    </footer>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/history.js') }}"></script>
+</body>
+</html>

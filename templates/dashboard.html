@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Dooper AI Report Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <!-- Chart.js CDN for visual charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Inline script to prevent theme flash
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('dark-mode');
+            });
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="{{ url_for('main.dashboard_page') }}" class="logo">
+                <img src="{{ url_for('static', filename='images/dooper-logo.jpeg') }}" style="width:2rem;height:2rem;object-fit:contain;border-radius:6px;" alt="Dooper">
+                <span>Dooper AI</span>
+            </a>
+            <ul class="nav-links">
+                <li class="active"><a href="{{ url_for('main.dashboard_page') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('main.history_page') }}">History</a></li>
+                <li><a href="{{ url_for('main.profile_page') }}">Profile</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Light/Dark Mode">
+                        <svg id="theme-icon-sun" fill="currentColor" viewBox="0 0 20 20" style="display:none;"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.46 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
+                        <svg id="theme-icon-moon" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    </button>
+                </li>
+                <li><button id="logout-btn" class="btn logout-btn">Logout</button></li>
+            </ul>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <div class="welcome-info">
+                <h1>Welcome, <span id="user-display-name">{{ user.fullname }}</span>!</h1>
+                <p>Upload a clinical health report or biomarker file to automatically parse, assess, and summarize its contents.</p>
+            </div>
+            <div class="welcome-illus">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 100%; height: 100%;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h-2V9h4v8z"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Stats Metric Grid -->
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <span class="stat-title">Total Reports</span>
+                <span class="stat-value" id="stat-total">0</span>
+            </div>
+            <div class="stat-card normal">
+                <span class="stat-title">Normal Reports</span>
+                <span class="stat-value" id="stat-normal">0</span>
+            </div>
+            <div class="stat-card moderate">
+                <span class="stat-title">Moderate Reports</span>
+                <span class="stat-value" id="stat-moderate">0</span>
+            </div>
+            <div class="stat-card critical">
+                <span class="stat-title">Critical Reports</span>
+                <span class="stat-value" id="stat-critical">0</span>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Split Content -->
+        <div class="dashboard-grid">
+            <!-- Left Side: Upload & Charts -->
+            <div class="dashboard-main">
+                <!-- Upload Box -->
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                        </svg>
+                        Upload Medical Report
+                    </h2>
+                    
+                    <div id="upload-container">
+                        <div class="upload-zone" id="drop-zone">
+                            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <span class="upload-text">Drag and drop file here, or click to browse</span>
+                            <span class="upload-subtext">PDF, PNG, JPG, or JPEG (Max 10MB)</span>
+                            <input type="file" id="file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg">
+                        </div>
+                        
+                        <div class="processing-overlay" id="processing-view">
+                            <div class="loader"></div>
+                            <span class="upload-text" id="status-message">Extracting text and running AI analysis...</span>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="upload-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Load Demo Files (Bonus Feature helper) -->
+                    <div class="sample-section">
+                        <div class="sample-title">Try with demo reports (no download required)</div>
+                        <div class="sample-buttons">
+                            <button class="btn-sample" id="demo-normal">Normal Health Report</button>
+                            <button class="btn-sample" id="demo-moderate">Moderate Pre-Diabetic Report</button>
+                            <button class="btn-sample" id="demo-critical">Critical Anemic & Kidney Report</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Container (Bonus Feature) -->
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10 3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4zM9 4H7v7h2V4zm5 3a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4zm-1 1h-2v3h2V8zM4 9a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H0a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4zm-1 1H1v1h2v-1z"/>
+                        </svg>
+                        Analytics Summary
+                    </h2>
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <span class="stat-title" style="margin-bottom: 0.5rem; text-align: center; display: block;">Reports Severity Breakdown</span>
+                            <div class="canvas-wrapper">
+                                <canvas id="severity-pie-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <span class="stat-title" style="margin-bottom: 0.5rem; text-align: center; display: block;">Common Abnormal Markers</span>
+                            <div class="canvas-wrapper">
+                                <canvas id="markers-bar-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Recent list and profile summary -->
+            <div class="dashboard-sidebar">
+                <!-- Profile summary -->
+                <div class="card">
+                    <h2 class="card-title">Profile Summary</h2>
+                    <div class="profile-summary">
+                        <div class="avatar-circle" id="profile-avatar-letters">US</div>
+                        <span class="profile-name" id="profile-card-name">{{ user.fullname }}</span>
+                        <span class="profile-email" id="profile-card-email">{{ user.email }}</span>
+                        <a href="{{ url_for('main.profile_page') }}" class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;">Edit Profile</a>
+                    </div>
+                </div>
+
+                <!-- Recent Uploads -->
+                <div class="card">
+                    <h2 class="card-title" style="justify-content: space-between;">
+                        <span>Recent Analyses</span>
+                        <a href="{{ url_for('main.history_page') }}" style="font-size: 0.8rem; font-weight: 600; text-decoration: none; color: var(--primary);">View All</a>
+                    </h2>
+                    <div class="recent-list" id="recent-reports-container">
+                        <!-- Filled dynamically -->
+                        <div class="empty-state" style="padding: 1.5rem; border: none; box-shadow: none;">
+                            <span style="font-size: 0.85rem;">No reports uploaded yet.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Dooper Medical Systems. Fully functional student prototype.</p>
+    </footer>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
