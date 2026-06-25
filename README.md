@@ -162,3 +162,4 @@ Since local machines may not have Tesseract OCR binaries installed, we have buil
    - **Start Command:** `gunicorn app:app`
 5. Click **Advanced**, and add your environment variables matching `.env.example` (like `SECRET_KEY`).
 6. Click **Deploy**. Render will read the `Procfile` and deploy your application online.
+![image alt](https://github.com/PriyaSingh0201/summer-intern-_dooper-report-analyzer/blob/938ee009877fa119cd6109e41bf226ebceccff17/Screenshot%202026-06-25%20224052.png)
