@@ -5,26 +5,21 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pypdf import PdfReader
 from PIL import Image
-import pytesseract
-import importlib
 
-pdf2image = None
 try:
-    pdf2image = importlib.import_module('pdf2image')
-except ImportError:
-    pdf2image = None
-
-# Tesseract path is configurable for Linux/macOS/Windows via environment variable.
-# If not provided, pytesseract will rely on the system PATH.
-tesseract_cmd = os.environ.get('TESSERACT_CMD')
-if tesseract_cmd:
-    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+    import pytesseract
+    _tesseract_cmd = os.environ.get('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+    pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
+    TESSERACT_OK = True
+except Exception:
+    pytesseract = None
+    TESSERACT_OK = False
 
 
 # --- OCR & Text Extraction ---
 
 def extract_text_from_pdf(file_path):
-    """Extract text from PDF using pypdf. For scanned PDFs, uses Tesseract via pdf2image."""
+    """Extract text from PDF using pypdf. Scanned PDFs return empty string on Render (no Tesseract)."""
     try:
         reader = PdfReader(file_path)
         text = ""
@@ -36,25 +31,14 @@ def extract_text_from_pdf(file_path):
             return text.strip()
     except Exception as e:
         print(f"pypdf failed: {e}")
-
-    # Scanned PDF fallback — convert to images then OCR
-    try:
-        if pdf2image is None:
-            raise ImportError("pdf2image not installed")
-        images = pdf2image.convert_from_path(file_path, dpi=300)
-        full_text = ""
-        for img in images:
-            full_text += pytesseract.image_to_string(img, config='--psm 6') + "\n"
-        if full_text.strip():
-            print("Scanned PDF OCR successful.")
-            return full_text.strip()
-    except Exception as e:
-        print(f"Scanned PDF OCR failed: {e}")
     return ""
 
 
 def extract_text_from_image(file_path):
-    """Extract text from image (JPEG/PNG) using Tesseract OCR."""
+    """Extract text from image using Tesseract OCR. Falls back gracefully if not available."""
+    if not TESSERACT_OK:
+        print("Tesseract not available on this server.")
+        return ""
     try:
         img = Image.open(file_path)
         if img.mode not in ('RGB', 'L'):
