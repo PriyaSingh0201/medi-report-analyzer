@@ -14,8 +14,11 @@ try:
 except ImportError:
     pdf2image = None
 
-# Tesseract path for Windows
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Tesseract path is configurable for Linux/macOS/Windows via environment variable.
+# If not provided, pytesseract will rely on the system PATH.
+tesseract_cmd = os.environ.get('TESSERACT_CMD')
+if tesseract_cmd:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
 
 # --- OCR & Text Extraction ---
@@ -170,13 +173,18 @@ def analyze_medical_text(text):
         return s.get(status, s.get("High", ""))
 
     def add_finding(name, val, unit, status, ref_range):
+        suggestion_text = get_suggestion(name, status)
         findings[name] = {
             "value": val,
             "unit": unit,
             "status": status,
             "reference_range": ref_range,
-            "suggestion": get_suggestion(name, status)
+            "suggestion": suggestion_text
         }
+        if status in {"Low", "High", "Critical"}:
+            alerts.append(f"⚠ {status} {name} detected.")
+        if suggestion_text:
+            suggestions.append(suggestion_text)
         if status in {"Low", "Critical"} and name in DEFICIENCY_PHRASES:
             deficiencies.append(DEFICIENCY_PHRASES[name])
 
@@ -372,9 +380,30 @@ def analyze_medical_text(text):
             deficiency_summary = "No deficiency patterns detected in the parsed biomarkers."
 
     summary_text = " ".join(summaries)
+    suggestions = list(dict.fromkeys(suggestions))
+
+    abnormal_count = len([status for status in [f["status"] for f in findings.values()] if status != "Normal"])
+    critical_count = len([status for status in [f["status"] for f in findings.values()] if status == "Critical"])
+
+    if not findings:
+        short_summary = "No standard biomarkers could be parsed from this report. Please review the report manually."
+    else:
+        if critical_count > 0:
+            short_summary = f"This report contains {abnormal_count} abnormal biomarker(s), including {critical_count} critical finding(s). Overall severity is {severity}."
+        elif abnormal_count > 0:
+            short_summary = f"This report contains {abnormal_count} abnormal biomarker(s) and shows {severity} severity overall."
+        else:
+            short_summary = "All parsed biomarkers are within expected ranges and no abnormalities were detected."
+
+    detailed_summary = short_summary
+    if summary_text:
+        detailed_summary += " " + summary_text
+    if deficiency_summary:
+        detailed_summary += " " + deficiency_summary
 
     return {
-        "summary": summary_text,
+        "summary": short_summary,
+        "detailed_summary": detailed_summary.strip(),
         "deficiency_summary": deficiency_summary,
         "key_findings": findings,
         "severity": severity,

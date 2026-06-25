@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const analysisPanel = document.getElementById('analysis-panel');
     let searchDebounceTimeout = null;
     let reportsList = []; // local cache of fetched reports
+    let biomarkerChart = null;
 
     // Fetch reports from API
     async function fetchReports() {
@@ -235,6 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
             suggestionsSection.style.display = 'none';
         }
 
+        // Biomarker chart rendering
+        renderBiomarkerChart(report.key_findings);
+        renderStatusDistributionChart(report.key_findings);
+
         // Show panel
         analysisPanel.classList.add('active');
         analysisPanel.scrollIntoView({ behavior: 'smooth' });
@@ -324,6 +329,141 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Check if redirect parameters exist (e.g. view_id parameter from Dashboard)
+    function renderBiomarkerChart(keyFindings) {
+        const chartCanvas = document.getElementById('biomarker-chart');
+        if (!chartCanvas) return;
+
+        const abnormalLabels = [];
+        const abnormalValues = [];
+
+        Object.entries(keyFindings).forEach(([name, finding]) => {
+            if (finding.status && finding.status !== 'Normal') {
+                abnormalLabels.push(name);
+                abnormalValues.push(1);
+            }
+        });
+
+        const labels = abnormalLabels.length > 0 ? abnormalLabels : ['No abnormal biomarkers'];
+        const data = abnormalValues.length > 0 ? abnormalValues : [1];
+        const barColor = abnormalValues.length > 0 ? '#EF4444' : '#64748b';
+
+        if (biomarkerChart) {
+            biomarkerChart.destroy();
+        }
+
+        const ctx = chartCanvas.getContext('2d');
+        biomarkerChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Abnormal Biomarkers',
+                    data,
+                    backgroundColor: barColor,
+                    borderRadius: 6,
+                    maxBarThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            display: abnormalValues.length > 0
+                        },
+                        grid: {
+                            color: getComputedStyle(document.body).getPropertyValue('--border-color')
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
+                            font: { family: 'Inter', size: 10 }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => {
+                                if (abnormalValues.length === 0) {
+                                    return 'No issues detected';
+                                }
+                                return `${context.label}: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    let statusPieChart = null;
+    function renderStatusDistributionChart(keyFindings) {
+        const canvas = document.getElementById('status-distribution-chart');
+        if (!canvas) return;
+
+        const statusCounts = { Normal: 0, Moderate: 0, Critical: 0 };
+        Object.values(keyFindings).forEach(finding => {
+            const status = finding.status || 'Normal';
+            if (status === 'Critical') {
+                statusCounts.Critical += 1;
+            } else if (status === 'High' || status === 'Low') {
+                statusCounts.Moderate += 1;
+            } else {
+                statusCounts.Normal += 1;
+            }
+        });
+
+        const total = statusCounts.Normal + statusCounts.Moderate + statusCounts.Critical;
+        const labels = ['Normal', 'Moderate', 'Critical'];
+        const data = [statusCounts.Normal, statusCounts.Moderate, statusCounts.Critical];
+
+        if (statusPieChart) {
+            statusPieChart.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        statusPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderColor: 'transparent'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-main'),
+                            font: { family: 'Inter', weight: '600' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: context => `${context.label}: ${context.parsed}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     function checkURLParameters() {
         const urlParams = new URLSearchParams(window.location.search);
         const viewId = urlParams.get('view_id');

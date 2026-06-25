@@ -40,6 +40,7 @@ def init_db():
             file_path TEXT NOT NULL,
             extracted_text TEXT,
             summary TEXT,
+            detailed_summary TEXT,
             deficiency_summary TEXT,
             key_findings TEXT, -- JSON string
             severity TEXT,
@@ -58,6 +59,9 @@ def init_db():
     if 'deficiency_summary' not in columns:
         cursor.execute("ALTER TABLE reports ADD COLUMN deficiency_summary TEXT DEFAULT ''")
         print("Migrated database: added deficiency_summary column to reports table")
+    if 'detailed_summary' not in columns:
+        cursor.execute("ALTER TABLE reports ADD COLUMN detailed_summary TEXT DEFAULT ''")
+        print("Migrated database: added detailed_summary column to reports table")
         
     conn.commit()
     conn.close()

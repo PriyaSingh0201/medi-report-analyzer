@@ -6,6 +6,7 @@
     <title>Report History | Dooper Report Analyzer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Inline script to prevent theme flash
         if (localStorage.getItem('theme') === 'dark') {
@@ -113,6 +114,12 @@
                 <div class="summary-box" id="view-summary">
                     Clinical summary content goes here...
                 </div>
+                <div class="chart-card" style="padding: 1rem; margin-top: 1rem;">
+                    <h3 style="margin-bottom: 0.75rem; font-weight: 700;">📊 Biomarker Status Distribution</h3>
+                    <div style="min-height: 250px;">
+                        <canvas id="status-distribution-chart"></canvas>
+                    </div>
+                </div>
                 <div class="summary-box" id="view-deficiency-summary" style="background: rgba(224, 41, 90, 0.05); border: 1px solid rgba(224, 41, 90, 0.12);">
                     <strong>Deficiency Summary</strong>
                     <p id="view-deficiency-text" style="margin: 0.75rem 0 0 0; color: var(--text-main);">Deficiency details will appear here.</p>
@@ -146,6 +153,13 @@
                 <div id="view-suggestions-section" style="display:none; margin-top: 1.5rem;">
                     <h3 style="margin-bottom: 0.75rem; font-weight: 700;">💡 Doctor Recommendations</h3>
                     <ul class="suggestions-list" id="view-suggestions-list"></ul>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border-color);">
+                    <h3 style="font-weight: 700; margin-bottom: 0.75rem;">📊 Biomarker Chart</h3>
+                    <div style="min-height: 260px;">
+                        <canvas id="biomarker-chart"></canvas>
+                    </div>
                 </div>
             </div>
 

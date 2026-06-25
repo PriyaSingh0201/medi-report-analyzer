@@ -51,13 +51,14 @@ def update_user_password(user_id, new_password_hash):
 
 # --- Report Model Functions ---
 
-def create_report(user_id, report_name, file_path, extracted_text, summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
+def create_report(user_id, report_name, file_path, extracted_text, summary, detailed_summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
     """
     Creates a new report record.
     key_findings: dict/list representing findings, will be JSON stringified.
     alerts: list representing warning alerts, will be JSON stringified.
     suggestions: list representing recommendations, will be JSON stringified.
     deficiency_summary: plain text summary of detected deficiencies.
+    detailed_summary: longer text summary for deeper report context.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -67,20 +68,21 @@ def create_report(user_id, report_name, file_path, extracted_text, summary, defi
     alerts_str = json.dumps(alerts)
     suggestions_str = json.dumps(suggestions if suggestions is not None else [])
     deficiency_summary_value = deficiency_summary if deficiency_summary is not None else ''
+    detailed_summary_value = detailed_summary if detailed_summary is not None else ''
     
     cursor.execute(
         """
-        INSERT INTO reports (user_id, report_name, file_path, extracted_text, summary, deficiency_summary, key_findings, severity, alerts, suggestions)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO reports (user_id, report_name, file_path, extracted_text, summary, detailed_summary, deficiency_summary, key_findings, severity, alerts, suggestions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (user_id, report_name, file_path, extracted_text, summary, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str)
+        (user_id, report_name, file_path, extracted_text, summary, detailed_summary_value, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str)
     )
     conn.commit()
     report_id = cursor.lastrowid
     conn.close()
     return report_id
 
-def update_report(report_id, user_id, report_name, summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
+def update_report(report_id, user_id, report_name, summary, detailed_summary, deficiency_summary, key_findings, severity, alerts, suggestions=None):
     """
     Updates an existing report record.
     """
@@ -91,14 +93,15 @@ def update_report(report_id, user_id, report_name, summary, deficiency_summary, 
     alerts_str = json.dumps(alerts)
     suggestions_str = json.dumps(suggestions if suggestions is not None else [])
     deficiency_summary_value = deficiency_summary if deficiency_summary is not None else ''
+    detailed_summary_value = detailed_summary if detailed_summary is not None else ''
     
     cursor.execute(
         """
         UPDATE reports
-        SET report_name = ?, summary = ?, deficiency_summary = ?, key_findings = ?, severity = ?, alerts = ?, suggestions = ?
+        SET report_name = ?, summary = ?, detailed_summary = ?, deficiency_summary = ?, key_findings = ?, severity = ?, alerts = ?, suggestions = ?
         WHERE id = ? AND user_id = ?
         """,
-        (report_name, summary, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str, report_id, user_id)
+        (report_name, summary, detailed_summary_value, deficiency_summary_value, key_findings_str, severity, alerts_str, suggestions_str, report_id, user_id)
     )
     conn.commit()
     rows_affected = cursor.rowcount
@@ -158,6 +161,7 @@ def get_reports_by_user(user_id, search_query=None, severity_filter=None, sort_b
             report['suggestions'] = []
             
         report['deficiency_summary'] = report.get('deficiency_summary', '') or ''
+        report['detailed_summary'] = report.get('detailed_summary', '') or ''
         reports.append(report)
         
     return reports
@@ -188,6 +192,7 @@ def get_report_by_id(report_id, user_id):
             report['suggestions'] = []
 
         report['deficiency_summary'] = report.get('deficiency_summary', '') or ''
+        report['detailed_summary'] = report.get('detailed_summary', '') or ''
         return report
     return None
 
@@ -228,20 +233,30 @@ def get_report_statistics(user_id):
     
     # Let's count common abnormal parameters.
     # We retrieve the alerts lists for the user's reports.
-    cursor.execute("SELECT alerts FROM reports WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT alerts, key_findings FROM reports WHERE user_id = ?", (user_id,))
     alerts_rows = cursor.fetchall()
     conn.close()
     
     abnormal_counts = {}
     for row in alerts_rows:
-        if row[0]:
+        alerts_text = row[0]
+        key_findings_text = row[1]
+        if alerts_text:
             try:
-                alerts_list = json.loads(row[0])
+                alerts_list = json.loads(alerts_text)
                 for alert in alerts_list:
-                    # An alert usually reads like "⚠ High Blood Sugar detected." or "⚠ Low Vitamin D."
-                    # We can clean up the string to identify the parameter name.
                     clean_alert = alert.replace("⚠ ", "").replace(" detected.", "").replace(".", "").strip()
                     abnormal_counts[clean_alert] = abnormal_counts.get(clean_alert, 0) + 1
+                continue
+            except (TypeError, ValueError):
+                pass
+
+        if key_findings_text:
+            try:
+                key_findings = json.loads(key_findings_text)
+                for name, finding in key_findings.items():
+                    if finding.get('status') and finding['status'] != 'Normal':
+                        abnormal_counts[name] = abnormal_counts.get(name, 0) + 1
             except (TypeError, ValueError):
                 pass
                 

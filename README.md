@@ -105,14 +105,31 @@ Copy-Item .env.example .env
 # macOS / Linux / Command Prompt
 cp .env.example .env
 ```
-*(You can customize the JWT secret key or add SMTP email settings in `.env` if desired. The program functions perfectly using console-logging fallback if SMTP values are left empty.)*
+
+Open `.env` and set at least the following values:
+```text
+SECRET_KEY=replace-with-a-secure-secret
+DEBUG=False
+```
+
+Optional environment variables:
+```text
+TESSERACT_CMD=     # Optional: path to tesseract binary if installed
+SMTP_SERVER=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SENDER_EMAIL=alerts@dooper-reports.com
+```
+
+*(The app can run without SMTP configured; critical alerts will be printed to the server log instead.)*
 
 ### 6. Run the Application
 Start the Flask server:
 ```bash
 python app.py
 ```
-On startup, the system will automatically create the `database/medical.db` file and set up the SQL schemas. Open your browser and navigate to:
+On startup, the application will automatically create `database/medical.db` and initialize the schema. Open your browser at:
 ```text
 http://127.0.0.1:5000/
 ```
@@ -145,4 +162,3 @@ Since local machines may not have Tesseract OCR binaries installed, we have buil
    - **Start Command:** `gunicorn app:app`
 5. Click **Advanced**, and add your environment variables matching `.env.example` (like `SECRET_KEY`).
 6. Click **Deploy**. Render will read the `Procfile` and deploy your application online.
->>>>>>> cfca014 (Initialize report analyzer project for Render deployment)

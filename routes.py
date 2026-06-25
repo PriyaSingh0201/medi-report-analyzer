@@ -274,6 +274,7 @@ def api_upload_report(current_user):
         file_path=os.path.join('uploads', unique_filename),
         extracted_text=extracted_text,
         summary=analysis['summary'],
+        detailed_summary=analysis.get('detailed_summary', ''),
         deficiency_summary=analysis.get('deficiency_summary', ''),
         key_findings=analysis['key_findings'],
         severity=analysis['severity'],
@@ -356,6 +357,7 @@ def api_update_report(current_user, report_id):
     data = request.get_json() or {}
     report_name = data.get('report_name', '').strip()
     summary = data.get('summary', '').strip()
+    detailed_summary = data.get('detailed_summary', '').strip()
     deficiency_summary = data.get('deficiency_summary', '').strip()
     key_findings = data.get('key_findings', {})
     severity = data.get('severity', 'Normal').strip()
@@ -370,6 +372,7 @@ def api_update_report(current_user, report_id):
         user_id=current_user['id'],
         report_name=report_name,
         summary=summary,
+        detailed_summary=detailed_summary,
         deficiency_summary=deficiency_summary,
         key_findings=key_findings,
         severity=severity,
@@ -384,6 +387,7 @@ def api_update_report(current_user, report_id):
                 'id': report_id,
                 'report_name': report_name,
                 'summary': summary,
+                'detailed_summary': detailed_summary,
                 'deficiency_summary': deficiency_summary,
                 'key_findings': key_findings,
                 'severity': severity,
