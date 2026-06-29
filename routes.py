@@ -439,3 +439,49 @@ def api_profile_stats(current_user):
         },
         'stats': stats
     })
+
+
+# --- Problem Summary API Endpoints ---
+
+@reports_bp.route('/api/summary/problems', methods=['GET'])
+@token_required
+def api_problem_summary(current_user):
+    """API endpoint to get aggregated problem summary across all reports."""
+    summary = models.get_problem_summary(current_user['id'])
+    return jsonify({
+        'message': 'Problem summary retrieved successfully!',
+        'summary': summary
+    })
+
+
+@reports_bp.route('/api/summary/problems-by-severity', methods=['GET'])
+@token_required
+def api_problems_by_severity(current_user):
+    """API endpoint to get problems grouped by severity level."""
+    problems = models.get_problem_summary_by_severity(current_user['id'])
+    return jsonify({
+        'message': 'Problems by severity retrieved successfully!',
+        'data': problems
+    })
+
+
+@reports_bp.route('/api/summary/problems-frequency', methods=['GET'])
+@token_required
+def api_problems_frequency(current_user):
+    """API endpoint to get problem frequency analysis and trends."""
+    frequency = models.get_problem_frequency_analysis(current_user['id'])
+    return jsonify({
+        'message': 'Problem frequency analysis retrieved successfully!',
+        'data': frequency
+    })
+
+
+@reports_bp.route('/api/summary/problems-stats', methods=['GET'])
+@token_required
+def api_problems_statistics(current_user):
+    """API endpoint to get detailed problem statistics."""
+    stats = models.get_problem_statistics(current_user['id'])
+    return jsonify({
+        'message': 'Problem statistics retrieved successfully!',
+        'statistics': stats
+    })

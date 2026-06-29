@@ -1,0 +1,324 @@
+<!-- Problem Summary Dashboard Component -->
+<!-- This component can be added to dashboard.html to display problem summaries -->
+
+<!-- Add this section to dashboard.html after existing dashboard sections -->
+
+<div class="dashboard-summary">
+    <h2>Problem Analysis Summary</h2>
+    
+    <!-- Problem Statistics Cards -->
+    <div class="problem-stats-grid">
+        <div class="stat-card-large">
+            <span class="stat-label">Total Unique Problems</span>
+            <span class="stat-value" id="total-unique-problems">0</span>
+        </div>
+        <div class="stat-card-large">
+            <span class="stat-label">Total Problems Detected</span>
+            <span class="stat-value" id="total-problems-detected">0</span>
+        </div>
+        <div class="stat-card-large">
+            <span class="stat-label">Avg Problems/Report</span>
+            <span class="stat-value" id="avg-problems-per-report">0</span>
+        </div>
+        <div class="stat-card-large">
+            <span class="stat-label">Critical Issues</span>
+            <span class="stat-value critical" id="critical-problems">0</span>
+        </div>
+    </div>
+
+    <!-- Top Problems Section -->
+    <div class="problems-section">
+        <h3>Most Common Problems</h3>
+        <div class="problems-list" id="top-problems-list">
+            <p class="loading">Loading problem data...</p>
+        </div>
+    </div>
+
+    <!-- Problems by Severity -->
+    <div class="severity-breakdown">
+        <h3>Problems by Severity</h3>
+        <div class="severity-grid">
+            <div class="severity-card normal">
+                <h4>Normal</h4>
+                <ul id="normal-problems-list"></ul>
+            </div>
+            <div class="severity-card moderate">
+                <h4>Moderate</h4>
+                <ul id="moderate-problems-list"></ul>
+            </div>
+            <div class="severity-card critical">
+                <h4>Critical</h4>
+                <ul id="critical-problems-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Problems -->
+    <div class="recent-section">
+        <h3>Recent Problems Detected</h3>
+        <div class="recent-problems" id="recent-problems-list">
+            <p class="loading">Loading recent problems...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Styles to add to dashboard.css -->
+<style>
+.dashboard-summary {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-summary h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.problem-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-large {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-large.critical {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.problems-section,
+.severity-breakdown,
+.recent-section {
+    margin-top: 2rem;
+}
+
+.problems-section h3,
+.severity-breakdown h3,
+.recent-section h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.problems-list,
+.recent-problems {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.problem-item,
+.recent-problem-item {
+    background: var(--input-bg);
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.problem-name {
+    font-weight: 500;
+    flex: 1;
+}
+
+.problem-frequency {
+    background: #667eea;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.severity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.severity-card {
+    background: var(--input-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-top: 3px solid #667eea;
+}
+
+.severity-card.normal {
+    border-top-color: #4caf50;
+}
+
+.severity-card.moderate {
+    border-top-color: #ff9800;
+}
+
+.severity-card.critical {
+    border-top-color: #f44336;
+}
+
+.severity-card h4 {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.severity-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.severity-card li {
+    padding: 0.5rem 0;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.severity-card li:last-child {
+    border-bottom: none;
+}
+
+.loading {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+}
+
+.dark-mode .dashboard-summary {
+    background: #2a2a2a;
+    border-color: #444;
+}
+
+@media (max-width: 768px) {
+    .problem-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .severity-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<!-- JavaScript code to fetch and display problem summaries -->
+<!-- Add this to dashboard.js or a new summary.js file -->
+
+<script>
+async function loadProblemSummaries() {
+    try {
+        // Fetch all problem data
+        const [summaryRes, statsRes, severityRes, frequencyRes] = await Promise.all([
+            fetch('/api/summary/problems'),
+            fetch('/api/summary/problems-stats'),
+            fetch('/api/summary/problems-by-severity'),
+            fetch('/api/summary/problems-frequency')
+        ]);
+
+        if (!summaryRes.ok || !statsRes.ok || !severityRes.ok || !frequencyRes.ok) {
+            console.error('Error fetching problem data');
+            return;
+        }
+
+        const summaryData = await summaryRes.json();
+        const statsData = await statsRes.json();
+        const severityData = await severityRes.json();
+        const frequencyData = await frequencyRes.json();
+
+        // Update statistics cards
+        document.getElementById('total-unique-problems').textContent = summaryData.summary.total_problems;
+        document.getElementById('total-problems-detected').textContent = statsData.statistics.total_problems_detected;
+        document.getElementById('avg-problems-per-report').textContent = statsData.statistics.average_problems_per_report;
+        document.getElementById('critical-problems').textContent = statsData.statistics.problems_by_severity.Critical;
+
+        // Display top problems
+        const topProblems = summaryData.summary.problems.slice(0, 10);
+        const problemsList = document.getElementById('top-problems-list');
+        problemsList.innerHTML = '';
+        
+        topProblems.forEach(problem => {
+            const div = document.createElement('div');
+            div.className = 'problem-item';
+            div.innerHTML = `
+                <span class="problem-name">${problem.name}</span>
+                <span class="problem-frequency">${problem.count} occurrences</span>
+            `;
+            problemsList.appendChild(div);
+        });
+
+        // Display problems by severity
+        const severityProblems = severityData.data;
+        
+        ['Normal', 'Moderate', 'Critical'].forEach(severity => {
+            const listId = `${severity.toLowerCase()}-problems-list`;
+            const listElement = document.getElementById(listId);
+            listElement.innerHTML = '';
+            
+            const problems = severityProblems[severity] || [];
+            if (problems.length === 0) {
+                listElement.innerHTML = '<li>No problems detected</li>';
+            } else {
+                problems.forEach(problem => {
+                    const li = document.createElement('li');
+                    li.textContent = problem;
+                    listElement.appendChild(li);
+                });
+            }
+        });
+
+        // Display recent problems
+        const recentProblems = frequencyData.data.recent_problems || [];
+        const recentList = document.getElementById('recent-problems-list');
+        recentList.innerHTML = '';
+        
+        if (recentProblems.length === 0) {
+            recentList.innerHTML = '<p class="loading">No recent problems</p>';
+        } else {
+            recentProblems.forEach(problem => {
+                const div = document.createElement('div');
+                div.className = 'recent-problem-item';
+                div.innerHTML = `<span>${problem}</span>`;
+                recentList.appendChild(div);
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading problem summaries:', error);
+    }
+}
+
+// Call this function when dashboard loads
+document.addEventListener('DOMContentLoaded', () => {
+    loadProblemSummaries();
+});
+</script>
